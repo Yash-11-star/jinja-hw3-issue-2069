@@ -1,0 +1,44 @@
+META   DIFF [hand] {% if c == 1 %}{% set x = 1 %}{% elif c == 2 %}{% set x = 2 %}{% else %}{% set x = 3 %}{% endif %}{{ x }}
+    3.1.6=['c', 'x'] patched=['c']
+META   DIFF [hand] {% if c %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}{{ x }}
+    3.1.6=['c', 'x'] patched=['c']
+META   DIFF [hand] {% if c %}{% if d %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}{% else %}{% set x = 3 %}{% endif %}{{ x }}
+    3.1.6=['c', 'd', 'x'] patched=['c', 'd']
+META   DIFF [hand] {% if c %}{% set x = 1 %}{% else %}{% if d %}{% set x = 2 %}{% else %}{% set x = 3 %}{% endif %}{% endif %}{{ x }}
+    3.1.6=['c', 'd', 'x'] patched=['c', 'd']
+META   DIFF [hand] {% if c %}{% set x %}A{% endset %}{% else %}{% set x %}B{% endset %}{% endif %}{{ x }}
+    3.1.6=['c', 'x'] patched=['c']
+META   DIFF [hand] {% if c %}{% macro x() %}A{% endmacro %}{% else %}{% macro x() %}B{% endmacro %}{% endif %}{{ x() }}
+    3.1.6=['c', 'x'] patched=['c']
+META   DIFF [hand] {% if c %}{% set x, y = 1, 2 %}{% else %}{% set x, y = 3, 4 %}{% endif %}{{ x }}{{ y }}
+    3.1.6=['c', 'x', 'y'] patched=['c']
+META   DIFF [hand] {% if c %}{% set x = 1 %}{% set y = 1 %}{% else %}{% set x = 2 %}{% endif %}{{ x }}{{ y }}
+    3.1.6=['c', 'x', 'y'] patched=['c', 'y']
+META   DIFF [hand] {% for i in [1, 2] %}{% if c %}{% set x = i %}{% else %}{% set x = 0 %}{% endif %}{{ x }}{% endfor %}
+    3.1.6=['c', 'x'] patched=['c']
+META   DIFF [hand] {% macro m() %}{% if c %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}{{ x }}{% endmacro %}{{ m() }}
+    3.1.6=['c', 'x'] patched=['c']
+META   DIFF [hand] {% if c %}{% set x = 1 %}{% for i in [1] %}{{ x }}{% endfor %}{% else %}{% set x = 2 %}{% endif %}{{ x }}
+    3.1.6=['c', 'x'] patched=['c']
+META   DIFF [hand] {% if c %}{% set x = 1 %}{% set y %}{{ x }}{% endset %}{% else %}{% set x = 2 %}{% endif %}{{ x }}
+    3.1.6=['c', 'x', 'y'] patched=['c', 'y']
+META   DIFF [gen] {% if c %}{% set x = 1 %}{% else %}{% set x = 1 %}{% set y = 1 %}{% endif %}{% if c %}{% if c %}{% set x = x ~ 'a' %}{% elif d %}{% endif %}{% else %}{% if c %}{% set y = 1 %}{% elif d %}{% set y = 1 %}{% else %}{% endif %}{% set x = x ~ 'a' %}{% endif %}{% if c %}{{ y }}{% elif x %}{% else %}{% for i in [1] %}{{ x }}{% endfor %}{% if c %}{% for i in [1] %}{{ x }}{% endfor %}{% else %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{% endif %}{% endif %}{{ x }}{{ y }}
+    3.1.6=['c', 'd', 'm', 'x', 'y'] patched=['c', 'd', 'm', 'y']
+META   DIFF [gen] {% if c %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{% else %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{% set y = 1 %}{% endif %}{% set x = 1 %}{{ x }}{{ y }}
+    3.1.6=['c', 'm', 'y'] patched=['c', 'y']
+META   DIFF [gen] {{ y }}{% if c %}{% set y = 1 %}{% set x = 1 %}{% else %}{% set x = 1 %}{% endif %}{% set x = 1 %}{{ x }}{{ y }}
+    3.1.6=['c', 'x', 'y'] patched=['c', 'y']
+META   DIFF [gen] {% if c %}{% set x = 1 %}{% if c %}{% set x = x ~ 'a' %}{% else %}{% set x = 1 %}{% set x = 1 %}{% endif %}{% else %}{% set x = 1 %}{% endif %}{% if c %}{% endif %}{{ y }}{{ x }}{{ y }}
+    3.1.6=['c', 'x', 'y'] patched=['c', 'y']
+META   DIFF [gen] {% if c %}{% if c %}{% elif c %}{% for i in [1] %}{{ x }}{% endfor %}{% else %}{% endif %}{% endif %}{% if c %}{% if c %}{% elif d %}{% else %}{% endif %}{% elif c %}{% if c %}{% elif x %}{% else %}{{ y }}{{ x }}{% endif %}{% for i in [1] %}{{ x }}{% endfor %}{% elif d %}{% else %}{{ y }}{% endif %}{% if c %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{% else %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{% if c %}{% elif d %}{% else %}{% endif %}{% endif %}{{ x }}{{ y }}
+    3.1.6=['c', 'd', 'm', 'x', 'y'] patched=['c', 'd', 'x', 'y']
+META   DIFF [gen] {% if c %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{{ y }}{% else %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{% endif %}{% set x = x ~ 'a' %}{{ x }}{{ y }}
+    3.1.6=['c', 'm', 'x', 'y'] patched=['c', 'x', 'y']
+META   DIFF [gen] {% if c %}{% set y = 1 %}{% set x = 1 %}{% else %}{% set y = 1 %}{{ x }}{% endif %}{% if c %}{% set x = x ~ 'a' %}{% elif c %}{% set y = 1 %}{% elif x %}{% set x = x ~ 'a' %}{% endif %}{{ x }}{{ y }}
+    3.1.6=['c', 'x', 'y'] patched=['c', 'x']
+META   DIFF [gen] {% for i in [1] %}{{ x }}{% endfor %}{% if c %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{% else %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{{ x }}{% endif %}{% for i in [1] %}{{ x }}{% endfor %}{% set x = 1 %}{{ x }}{{ y }}
+    3.1.6=['c', 'm', 'x', 'y'] patched=['c', 'x', 'y']
+
+3038 templates (38 hand-written, 3000 generated) x 8 contexts
+templates with different rendering: 0
+templates with different find_undeclared_variables: 20

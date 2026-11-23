@@ -1,0 +1,11 @@
+### original 3.1.6
+jinja2 from /tmp/jinja316/src/jinja2/__init__.py
+flat: 500 if/elif/else blocks      meta    146.3 ms   compile    180.7 ms
+nested: 15 levels of for + if      meta     11.8 ms   compile     13.5 ms
+nested: 8 levels x 50 copies       meta    233.1 ms   compile    266.9 ms
+
+### patched
+jinja2 from /Users/yashtembhurnikar/Files/Purdue/CS 59300ASE/Homework/jinja/src/jinja2/__init__.py
+flat: 500 if/elif/else blocks      meta    140.2 ms   compile    176.7 ms
+nested: 15 levels of for + if      meta     15.2 ms   compile     16.6 ms
+nested: 8 levels x 50 copies       meta    287.4 ms   compile    322.0 ms

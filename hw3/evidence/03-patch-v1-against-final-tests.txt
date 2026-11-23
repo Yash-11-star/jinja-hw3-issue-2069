@@ -1,0 +1,43 @@
+### Final tests run against patch v1 (no nested-scope tracking), PYTHONPATH=<v1 checkout>/src
+diff --git a/src/jinja2/idtracking.py b/src/jinja2/idtracking.py
+index e6dd8cd1..5889612c 100644
+--- a/src/jinja2/idtracking.py
++++ b/src/jinja2/idtracking.py
+@@ -137,6 +137,12 @@ class Symbols:
+             target = self.find_ref(name)
+             assert target is not None, "should not happen"
+ 
++            if all(
++                name in sym.stores and sym.loads[target][0] != VAR_LOAD_RESOLVE
++                for sym in branch_symbols
++            ):
++                continue
++
+             if self.parent is not None:
+                 outer_target = self.parent.find_ref(name)
+                 if outer_target is not None:
+@@ -262,10 +268,13 @@ class FrameSymbolVisitor(NodeVisitor):
+             self.symbols = original_symbols
+             return rv
+ 
+-        body_symbols = inner_visit(node.body)
+-        elif_symbols = inner_visit(node.elif_)
+-        else_symbols = inner_visit(node.else_ or ())
+-        self.symbols.branch_update([body_symbols, elif_symbols, else_symbols])
++        branch_symbols = [inner_visit(node.body)]
++
++        for elif_ in node.elif_:
++            branch_symbols.append(inner_visit([elif_.test, *elif_.body]))
++
++        branch_symbols.append(inner_visit(node.else_ or ()))
++        self.symbols.branch_update(branch_symbols)
+ 
+     def visit_Macro(self, node: nodes.Macro, **kwargs: t.Any) -> None:
+         self.symbols.store(node.name)
+FAILED tests/test_api.py::TestMeta::test_find_undeclared_variables_if_branches[{% for i in s %}{{ x }}{% endfor %}{% if c %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}-expect14]
+FAILED tests/test_api.py::TestMeta::test_find_undeclared_variables_if_branches[{% if c %}{% for i in s %}{{ x }}{% endfor %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}-expect15]
+FAILED tests/test_api.py::TestMeta::test_find_undeclared_variables_if_branches[source16-expect16]
+FAILED tests/test_regression.py::test_set_in_all_if_branches_render[source2-context2-ctx|a]
+FAILED tests/test_regression.py::test_set_in_all_if_branches_render[source3-context3-ctx|a]
+FAILED tests/test_regression.py::test_set_in_all_if_branches_render[source4-context4-ctx|b]
+6 failed, 934 passed in 1.13s

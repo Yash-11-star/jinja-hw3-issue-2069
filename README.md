@@ -1,3 +1,8 @@
+> **CS 59300 Homework 3:** this repository is Jinja 3.1.6 with a fix for
+> [pallets/jinja issue 2069](https://github.com/pallets/jinja/issues/2069).
+> See **[hw3/README.md](hw3/README.md)** for setup, how to reproduce the
+> original failure, and how to run the tests.
+
 # Jinja
 
 Jinja is a fast, expressive, extensible templating engine. Special

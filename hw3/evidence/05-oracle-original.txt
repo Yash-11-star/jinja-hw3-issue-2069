@@ -1,0 +1,3 @@
+3038 templates checked for names ['x', 'y']
+observable names NOT reported (false negatives): 0
+reported names that never affect the output (over-reports): 233
