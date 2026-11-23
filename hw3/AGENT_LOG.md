@@ -1,9 +1,10 @@
 # Coding-agent log: Jinja issue 2069
 
 Agent: **Claude Code** (Claude Opus 5.5) in VS Code, working in this repository.
-Prompt from the student: *"Now Help me complete My homework 3"*, with the
-HW3 handout (`hw3.pdf`) available in the workspace. No other instructions
-about the bug were given; every step below was chosen by the agent.
+Task: the HW3 handout (`hw3.pdf`) was given to the agent as its sole
+specification, with a request to carry out the assignment end to end. No
+hints about the bug, the relevant files or the fix were provided; every step
+below was chosen by the agent.
 Evidence files are in `evidence/`.
 
 ## 1. Exploring the repository and the issue
