@@ -45,6 +45,10 @@ class Symbols:
         self.refs: t.Dict[str, str] = {}
         self.loads: t.Dict[str, t.Any] = {}
         self.stores: t.Set[str] = set()
+        # Names that a nested scope (loop, macro, call block, ...) may load
+        # before this frame stores them. Such a scope sees the name's
+        # initial value, so the value can't be skipped by branch_update.
+        self.nested_loads: t.Set[str] = set()
 
     def analyze_node(self, node: nodes.Node, **kwargs: t.Any) -> None:
         visitor = RootVisitor(self)
@@ -92,6 +96,7 @@ class Symbols:
         rv.refs = self.refs.copy()
         rv.loads = self.loads.copy()
         rv.stores = self.stores.copy()
+        rv.nested_loads = self.nested_loads.copy()
         return rv
 
     def store(self, name: str) -> None:
@@ -132,10 +137,24 @@ class Symbols:
             self.refs.update(sym.refs)
             self.loads.update(sym.loads)
             self.stores.update(sym.stores)
+            self.nested_loads.update(sym.nested_loads)
 
         for name in stores:
             target = self.find_ref(name)
             assert target is not None, "should not happen"
+
+            # If every branch stores the name before anything loads it, the
+            # value from before the branches is never used, so there is no
+            # need to look it up. If a branch does not store it, or it is
+            # loaded first, directly or by a nested scope, the outer value is
+            # still needed.
+            if all(
+                name in sym.stores
+                and name not in sym.nested_loads
+                and sym.loads[target][0] != VAR_LOAD_RESOLVE
+                for sym in branch_symbols
+            ):
+                continue
 
             if self.parent is not None:
                 outer_target = self.parent.find_ref(name)
@@ -235,6 +254,15 @@ class FrameSymbolVisitor(NodeVisitor):
     def __init__(self, symbols: "Symbols") -> None:
         self.symbols = symbols
 
+    def _note_nested_loads(self, node: nodes.Node) -> None:
+        """Remember the names loaded inside a nested scope that this frame
+        has not stored yet. The nested scope is analyzed separately, but it
+        will see this frame's initial value for those names.
+        """
+        names = {n.name for n in node.find_all(nodes.Name) if n.ctx == "load"}
+        names.update(n.name for n in node.find_all(nodes.NSRef))
+        self.symbols.nested_loads.update(names - self.symbols.stores)
+
     def visit_Name(
         self, node: nodes.Name, store_as_param: bool = False, **kwargs: t.Any
     ) -> None:
@@ -262,12 +290,18 @@ class FrameSymbolVisitor(NodeVisitor):
             self.symbols = original_symbols
             return rv
 
-        body_symbols = inner_visit(node.body)
-        elif_symbols = inner_visit(node.elif_)
-        else_symbols = inner_visit(node.else_ or ())
-        self.symbols.branch_update([body_symbols, elif_symbols, else_symbols])
+        # Each elif is its own branch, and the else is shared by the whole
+        # chain, matching how the compiler generates the code.
+        branch_symbols = [inner_visit(node.body)]
+
+        for elif_ in node.elif_:
+            branch_symbols.append(inner_visit([elif_.test, *elif_.body]))
+
+        branch_symbols.append(inner_visit(node.else_ or ()))
+        self.symbols.branch_update(branch_symbols)
 
     def visit_Macro(self, node: nodes.Macro, **kwargs: t.Any) -> None:
+        self._note_nested_loads(node)
         self.symbols.store(node.name)
 
     def visit_Import(self, node: nodes.Import, **kwargs: t.Any) -> None:
@@ -293,26 +327,34 @@ class FrameSymbolVisitor(NodeVisitor):
         is visited as part of the outer scope.
         """
         self.visit(node.iter, **kwargs)
+        self._note_nested_loads(node)
 
     def visit_CallBlock(self, node: nodes.CallBlock, **kwargs: t.Any) -> None:
         self.visit(node.call, **kwargs)
+        self._note_nested_loads(node)
 
     def visit_FilterBlock(self, node: nodes.FilterBlock, **kwargs: t.Any) -> None:
         self.visit(node.filter, **kwargs)
+        self._note_nested_loads(node)
 
     def visit_With(self, node: nodes.With, **kwargs: t.Any) -> None:
         for target in node.values:
             self.visit(target)
 
+        self._note_nested_loads(node)
+
     def visit_AssignBlock(self, node: nodes.AssignBlock, **kwargs: t.Any) -> None:
         """Stop visiting at block assigns."""
+        self._note_nested_loads(node)
         self.visit(node.target, **kwargs)
 
     def visit_Scope(self, node: nodes.Scope, **kwargs: t.Any) -> None:
         """Stop visiting at scopes."""
+        self._note_nested_loads(node)
 
     def visit_Block(self, node: nodes.Block, **kwargs: t.Any) -> None:
         """Stop visiting at blocks."""
 
     def visit_OverlayScope(self, node: nodes.OverlayScope, **kwargs: t.Any) -> None:
         """Do not visit into overlay scopes."""
+        self._note_nested_loads(node)

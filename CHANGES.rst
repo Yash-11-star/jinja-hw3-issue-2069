@@ -1,5 +1,15 @@
 .. currentmodule:: jinja2
 
+Version 3.1.7
+-------------
+
+Unreleased
+
+-   A variable that is set in every branch of an ``{% if %}`` block, before
+    it is used, is not reported by ``meta.find_undeclared_variables``. Each
+    ``elif`` is treated as a separate branch. :issue:`2069`
+
+
 Version 3.1.6
 -------------
 
