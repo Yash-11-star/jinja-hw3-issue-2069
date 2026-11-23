@@ -259,9 +259,12 @@ class FrameSymbolVisitor(NodeVisitor):
         has not stored yet. The nested scope is analyzed separately, but it
         will see this frame's initial value for those names.
         """
-        names = {n.name for n in node.find_all(nodes.Name) if n.ctx == "load"}
-        names.update(n.name for n in node.find_all(nodes.NSRef))
-        self.symbols.nested_loads.update(names - self.symbols.stores)
+        for child in node.find_all((nodes.Name, nodes.NSRef)):
+            if isinstance(child, nodes.NSRef) or (
+                isinstance(child, nodes.Name) and child.ctx == "load"
+            ):
+                if child.name not in self.symbols.stores:
+                    self.symbols.nested_loads.add(child.name)
 
     def visit_Name(
         self, node: nodes.Name, store_as_param: bool = False, **kwargs: t.Any
