@@ -193,6 +193,132 @@ class TestMeta:
         )
         assert meta.find_undeclared_variables(ast) == {"control"}
 
+    @pytest.mark.parametrize(
+        ("source", "expect"),
+        [
+            # Set in every branch: the outer value is never needed.
+            (
+                "{% if c %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}{{ x }}",
+                {"c"},
+            ),
+            (
+                "{% if c %}{% set x = 1 %}{% elif d %}{% set x = 2 %}"
+                "{% elif e %}{% set x = 3 %}{% else %}{% set x = 4 %}{% endif %}"
+                "{{ x }}",
+                {"c", "d", "e"},
+            ),
+            (
+                "{% if c %}{% set x, y = 1, 2 %}{% else %}{% set x, y = 3, 4 %}"
+                "{% endif %}{{ x }}{{ y }}",
+                {"c"},
+            ),
+            (
+                "{% if c %}{% set x %}a{% endset %}{% else %}{% set x %}b{% endset %}"
+                "{% endif %}{{ x }}",
+                {"c"},
+            ),
+            (
+                "{% if c %}{% macro x() %}a{% endmacro %}"
+                "{% else %}{% macro x() %}b{% endmacro %}{% endif %}{{ x() }}",
+                {"c"},
+            ),
+            # Not set in every branch: the outer value may be used.
+            ("{% if c %}{% set x = 1 %}{% endif %}{{ x }}", {"c", "x"}),
+            (
+                "{% if c %}{% set x = 1 %}{% elif d %}{% set x = 2 %}{% endif %}"
+                "{{ x }}",
+                {"c", "d", "x"},
+            ),
+            (
+                "{% if c %}{% set x = 1 %}{% elif d %}"
+                "{% else %}{% set x = 3 %}{% endif %}{{ x }}",
+                {"c", "d", "x"},
+            ),
+            (
+                "{% if c %}{% set x = 1 %}{% set y = 2 %}{% else %}{% set x = 3 %}"
+                "{% endif %}{{ x }}{{ y }}",
+                {"c", "y"},
+            ),
+            # Set in a loop body, which does not leak out of the loop.
+            (
+                "{% if c %}{% for i in s %}{% set x = 1 %}{% endfor %}"
+                "{% else %}{% set x = 2 %}{% endif %}{{ x }}",
+                {"c", "s", "x"},
+            ),
+            # Read before it is set, so the outer value is used.
+            (
+                "{% if c %}{{ x }}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}",
+                {"c", "x"},
+            ),
+            (
+                "{% if c %}{% set x = x + 1 %}{% else %}{% set x = 2 %}{% endif %}"
+                "{{ x }}",
+                {"c", "x"},
+            ),
+            (
+                "{% if c %}{% set x = 1 %}{% elif x %}{% set x = 2 %}"
+                "{% else %}{% set x = 3 %}{% endif %}{{ x }}",
+                {"c", "x"},
+            ),
+            (
+                "{{ x }}{% if c %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}",
+                {"c", "x"},
+            ),
+            # A nested scope that reads it before it is set sees the outer value.
+            (
+                "{% for i in s %}{{ x }}{% endfor %}"
+                "{% if c %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}",
+                {"c", "s", "x"},
+            ),
+            (
+                "{% if c %}{% for i in s %}{{ x }}{% endfor %}{% set x = 1 %}"
+                "{% else %}{% set x = 2 %}{% endif %}",
+                {"c", "s", "x"},
+            ),
+            (
+                "{% macro m() %}{{ x }}{% endmacro %}{{ m() }}"
+                "{% if c %}{% set x = 1 %}{% else %}{% set x = 2 %}{% endif %}",
+                {"c", "x"},
+            ),
+            # A nested scope that reads it after it is set does not.
+            (
+                "{% if c %}{% set x = 1 %}{% for i in s %}{{ x }}{% endfor %}"
+                "{% else %}{% set x = 2 %}{% endif %}",
+                {"c", "s"},
+            ),
+            # Nested if statements.
+            (
+                "{% if c %}{% if d %}{% set x = 1 %}{% else %}{% set x = 2 %}"
+                "{% endif %}{% else %}{% set x = 3 %}{% endif %}{{ x }}",
+                {"c", "d"},
+            ),
+            (
+                "{% if c %}{% if d %}{% set x = 1 %}{% endif %}"
+                "{% else %}{% set x = 3 %}{% endif %}{{ x }}",
+                {"c", "d", "x"},
+            ),
+            (
+                "{% if c %}{% set x = 1 %}{% elif d %}{% if e %}{% set x = 2 %}"
+                "{% else %}{% set x = 3 %}{% endif %}{% else %}{% set x = 4 %}"
+                "{% endif %}{{ x }}",
+                {"c", "d", "e"},
+            ),
+            # Inside other scopes.
+            (
+                "{% for i in s %}{% if c %}{% set x = i %}{% else %}{% set x = 0 %}"
+                "{% endif %}{{ x }}{% endfor %}",
+                {"c", "s"},
+            ),
+            (
+                "{% macro m() %}{% if c %}{% set x = 1 %}{% else %}{% set x = 2 %}"
+                "{% endif %}{{ x }}{% endmacro %}{{ m() }}",
+                {"c"},
+            ),
+        ],
+    )
+    def test_find_undeclared_variables_if_branches(self, env, source, expect):
+        assert meta.find_undeclared_variables(env.parse(source)) == expect
+
     def test_find_refererenced_templates(self, env):
         ast = env.parse('{% extends "layout.html" %}{% include helper %}')
         i = meta.find_referenced_templates(ast)

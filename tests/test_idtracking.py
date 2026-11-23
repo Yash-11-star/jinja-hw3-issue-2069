@@ -258,6 +258,57 @@ def test_if_branching_stores_undefined():
     }
 
 
+def test_if_branching_stores_all_branches():
+    tmpl = nodes.Template(
+        [
+            nodes.If(
+                nodes.Name("a", "load"),
+                [nodes.Assign(nodes.Name("variable", "store"), nodes.Const(1))],
+                [
+                    nodes.If(
+                        nodes.Name("b", "load"),
+                        [nodes.Assign(nodes.Name("variable", "store"), nodes.Const(2))],
+                        [],
+                        [],
+                    )
+                ],
+                [nodes.Assign(nodes.Name("variable", "store"), nodes.Const(3))],
+            )
+        ]
+    )
+
+    sym = symbols_for_node(tmpl)
+    assert sym.stores == {"variable"}
+    assert sym.loads == {
+        "l_0_variable": ("undefined", None),
+        "l_0_a": ("resolve", "a"),
+        "l_0_b": ("resolve", "b"),
+    }
+
+
+def test_if_branching_stores_all_branches_load_first():
+    tmpl = nodes.Template(
+        [
+            nodes.If(
+                nodes.Name("a", "load"),
+                [
+                    nodes.Output([nodes.Name("variable", "load")]),
+                    nodes.Assign(nodes.Name("variable", "store"), nodes.Const(1)),
+                ],
+                [],
+                [nodes.Assign(nodes.Name("variable", "store"), nodes.Const(2))],
+            )
+        ]
+    )
+
+    sym = symbols_for_node(tmpl)
+    assert sym.stores == {"variable"}
+    assert sym.loads == {
+        "l_0_variable": ("resolve", "variable"),
+        "l_0_a": ("resolve", "a"),
+    }
+
+
 def test_if_branching_multi_scope():
     for_loop = nodes.For(
         nodes.Name("item", "store"),

@@ -760,6 +760,50 @@ def test_load_parameter_when_set_in_all_if_branches(env):
     assert tmpl.render(a={"b": 0}) == "01"
 
 
+@pytest.mark.parametrize(
+    ("source", "context", "expect"),
+    [
+        # Each elif is a separate branch sharing the outer else.
+        (
+            "{% if c == 1 %}{% set x = 'a' %}{% elif c == 2 %}{% set x = 'b' %}"
+            "{% elif c == 3 %}{% set x = 'c' %}{% else %}{% set x = 'd' %}"
+            "{% endif %}{{ x }}",
+            {"c": 3, "x": "ctx"},
+            "c",
+        ),
+        # An elif test that reads the name sees the outer value.
+        (
+            "{% if c %}{% set x = 'a' %}{% elif x %}{% set x = x ~ 'b' %}"
+            "{% else %}{% set x = 'c' %}{% endif %}{{ x }}",
+            {"c": False, "x": "ctx"},
+            "ctxb",
+        ),
+        # A loop or macro that reads the name before it is set in every
+        # branch still sees the value from the context.
+        (
+            "{% for i in [1] %}{{ x }}{% endfor %}|"
+            "{% if c %}{% set x = 'a' %}{% else %}{% set x = 'b' %}{% endif %}{{ x }}",
+            {"c": True, "x": "ctx"},
+            "ctx|a",
+        ),
+        (
+            "{% if c %}{% for i in [1] %}{{ x }}{% endfor %}|{% set x = 'a' %}"
+            "{% else %}{% set x = 'b' %}{% endif %}{{ x }}",
+            {"c": True, "x": "ctx"},
+            "ctx|a",
+        ),
+        (
+            "{% macro m() %}{{ x }}{% endmacro %}{{ m() }}|"
+            "{% if c %}{% set x = 'a' %}{% else %}{% set x = 'b' %}{% endif %}{{ x }}",
+            {"c": False, "x": "ctx"},
+            "ctx|b",
+        ),
+    ],
+)
+def test_set_in_all_if_branches_render(env, source, context, expect):
+    assert env.from_string(source).render(context) == expect
+
+
 @pytest.mark.parametrize("unicode_char", ["\N{FORM FEED}", "\x85"])
 def test_unicode_whitespace(env, unicode_char):
     content = "Lorem ipsum\n" + unicode_char + "\nMore text"
