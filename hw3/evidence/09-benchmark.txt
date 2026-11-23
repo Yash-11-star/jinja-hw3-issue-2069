@@ -1,11 +1,13 @@
 ### original 3.1.6
 jinja2 from /tmp/jinja316/src/jinja2/__init__.py
-flat: 500 if/elif/else blocks      meta    146.3 ms   compile    180.7 ms
-nested: 15 levels of for + if      meta     11.8 ms   compile     13.5 ms
-nested: 8 levels x 50 copies       meta    233.1 ms   compile    266.9 ms
+flat: 500 if/elif/else blocks      meta    142.2 ms   compile    179.2 ms
+nested: 15 levels of for + if      meta     11.8 ms   compile     13.0 ms
+nested: 8 levels x 50 copies       meta    233.1 ms   compile    266.4 ms
 
-### patched
+### patched (final: single-pass nested-scope scan)
 jinja2 from /Users/yashtembhurnikar/Files/Purdue/CS 59300ASE/Homework/jinja/src/jinja2/__init__.py
-flat: 500 if/elif/else blocks      meta    140.2 ms   compile    176.7 ms
-nested: 15 levels of for + if      meta     15.2 ms   compile     16.6 ms
-nested: 8 levels x 50 copies       meta    287.4 ms   compile    322.0 ms
+flat: 500 if/elif/else blocks      meta    139.2 ms   compile    176.9 ms
+nested: 15 levels of for + if      meta     13.5 ms   compile     14.7 ms
+nested: 8 levels x 50 copies       meta    264.8 ms   compile    293.5 ms
+
+### for reference, the earlier two-pass version measured: 8 levels x 50 copies compile 322.0 ms vs 266.9 ms original

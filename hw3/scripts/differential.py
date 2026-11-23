@@ -4,7 +4,10 @@ Renders each template with several contexts under both versions and compares
 the output, then compares find_undeclared_variables(). Prints every template
 whose rendering or result differs.
 
-Usage: python hw3/scripts/differential.py /path/to/original/jinja/src
+Usage: python hw3/scripts/differential.py /path/to/original/jinja/src [--async]
+
+With --async, both versions use Environment(enable_async=True), which
+compiles templates to async code.
 """
 
 import itertools
@@ -17,6 +20,7 @@ from templates import HAND_WRITTEN
 from templates import TEMPLATES
 
 ORIGINAL_SRC = sys.argv[1]
+ASYNC = "--async" in sys.argv[2:]
 
 CONTEXTS = [dict(c=c, d=d, x="CTX", y="CY") for c, d in itertools.product([True, False], repeat=2)]
 CONTEXTS += [dict(c=c, d=d) for c, d in itertools.product([True, False], repeat=2)]
@@ -24,9 +28,10 @@ CONTEXTS += [dict(c=c, d=d) for c, d in itertools.product([True, False], repeat=
 RUNNER = r"""
 import json, sys
 sys.path.insert(0, sys.argv[1]) if sys.argv[1] != "-" else None
+is_async = sys.argv[2] == "1"
 from jinja2 import Environment, meta
 templates, contexts = json.load(sys.stdin)
-env = Environment()
+env = Environment(enable_async=is_async)
 out = []
 for src in templates:
     renders = []
@@ -46,7 +51,7 @@ json.dump(out, sys.stdout)
 
 def run(src_path):
     proc = subprocess.run(
-        [sys.executable, "-c", RUNNER, src_path],
+        [sys.executable, "-c", RUNNER, src_path, "1" if ASYNC else "0"],
         input=json.dumps([TEMPLATES, CONTEXTS]),
         capture_output=True,
         text=True,
@@ -71,7 +76,8 @@ for i, (src, (o_r, o_m), (n_r, n_m)) in enumerate(zip(TEMPLATES, old, new)):
         meta_diffs += 1
         print(f"META   DIFF [{kind}] {src}\n    3.1.6={o_m} patched={n_m}")
 
-print(f"\n{len(TEMPLATES)} templates ({len(HAND_WRITTEN)} hand-written, {len(GENERATED)} generated)"
+print(f"\nmode: {'async' if ASYNC else 'sync'}")
+print(f"{len(TEMPLATES)} templates ({len(HAND_WRITTEN)} hand-written, {len(GENERATED)} generated)"
       f" x {len(CONTEXTS)} contexts")
 print(f"templates with different rendering: {render_diffs}")
 print(f"templates with different find_undeclared_variables: {meta_diffs}")

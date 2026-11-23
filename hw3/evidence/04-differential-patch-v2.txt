@@ -39,6 +39,7 @@ META   DIFF [gen] {% if c %}{% set y = 1 %}{% set x = 1 %}{% else %}{% set y = 1
 META   DIFF [gen] {% for i in [1] %}{{ x }}{% endfor %}{% if c %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{% else %}{% macro m() %}{{ y }}{% endmacro %}{{ m() }}{{ x }}{% endif %}{% for i in [1] %}{{ x }}{% endfor %}{% set x = 1 %}{{ x }}{{ y }}
     3.1.6=['c', 'm', 'x', 'y'] patched=['c', 'x', 'y']
 
+mode: sync
 3038 templates (38 hand-written, 3000 generated) x 8 contexts
 templates with different rendering: 0
 templates with different find_undeclared_variables: 20

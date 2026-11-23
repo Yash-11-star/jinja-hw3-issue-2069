@@ -116,7 +116,23 @@ tests.
 | Reproduction test | fails | passes | passes |
 | New + related tests (40) | 13 fail / 27 pass | 6 fail | all pass |
 | Full Jinja suite | 909 pass (+1 new failing) | 910 pass | **940 pass** |
-| Differential: templates rendering differently (of 3,038) | | 2 (of 3,030) | **0** |
+| Differential: templates rendering differently (of 3,038) | | 2 (of 3,030) | **0** (sync and async) |
 | Oracle: false negatives | 0 | | **0** |
 | Oracle: over-reports | 233 | | 216 |
 | ruff / mypy on changed files | | | clean |
+| Python versions | | | 3.9.6 and 3.14.7 |
+
+## 6. Review-driven refinement (directed by the student)
+
+After the work was declared complete and the repository published, the
+student asked the agent for a **strict assessment against the handout**,
+then directed it to address every weakness that assessment found. This was
+the main human intervention in the process.
+
+| Weakness found in review | Action | Result |
+|---|---|---|
+| Compile-time overhead of 20 to 30% on deeply nested templates | Profiled with `cProfile`: `_note_nested_loads` walked each nested scope's subtree twice (separate `find_all` passes for `Name` and `NSRef`) | Single pass. Overhead on the worst case dropped from +55 ms (+21%) to +27 ms (+10%); flat templates unchanged. A per-node cache could remove the rest, but was judged not worth the added complexity for a one-time, cached cost. |
+| Only the default (sync) code generator compared | Added `--async` to `differential.py` (`enable_async=True`) | 0 rendering differences in async mode too (`evidence/10-differential-async.txt`) |
+| Only tested on Python 3.14 | Ran the suite, the before/after tests and the differential on macOS's system Python 3.9.6 | Identical results (`evidence/11-python39.txt`). This also exposed a **README bug**: Python 3.9's bundled pip cannot install this `pyproject.toml` project in editable mode, so the README now upgrades pip first. |
+| README and report listed four commits after 3.1.6; there were five | Commit table updated | |
+

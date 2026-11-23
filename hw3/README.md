@@ -29,6 +29,9 @@ The history starts at the unmodified release commit, so every change is visible:
 | `Don't report variables set in all if branches as undeclared` | The fix: `src/jinja2/idtracking.py` and a `CHANGES.rst` entry |
 | `Add tests for variables set in if branches` | Additional validation tests |
 | `Add HW3 README, scripts and evidence` | This folder |
+| `Reword task description in AGENT_LOG` | Documentation only |
+| `Scan nested scopes in a single pass` | Performance refinement of the fix (behavior unchanged) |
+| `Update HW3 docs and evidence after review` | Documentation, scripts and evidence for the refinement |
 
 See the whole patch with `git diff 3.1.6 -- src/` (one file, `src/jinja2/idtracking.py`).
 
@@ -47,13 +50,14 @@ each `elif` as its own branch.
 
 ## Set up
 
-Requires Python 3.9+ (tested on Python 3.14) and git.
+Requires Python 3.9+ and git. Tested on Python **3.9.6** and **3.14.7**.
 
 ```bash
-git clone <this repository URL> jinja-hw3
+git clone https://github.com/Yash-11-star/jinja-hw3-issue-2069.git jinja-hw3
 cd jinja-hw3
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python -m pip install --upgrade pip         # older pips can't install pyproject.toml projects in editable mode
 pip install -e . -r requirements/tests.in   # Jinja's test dependencies: pytest, trio
 ```
 
@@ -119,7 +123,8 @@ git worktree add /tmp/jinja-3.1.6 3.1.6
 # Render 3,038 templates (38 hand-written + 3,000 random if/elif/else chains)
 # under both versions with 8 contexts; report any difference.
 python hw3/scripts/differential.py /tmp/jinja-3.1.6/src
-#   expected: different rendering: 0, different find_undeclared_variables: 20
+python hw3/scripts/differential.py /tmp/jinja-3.1.6/src --async    # enable_async=True
+#   expected (both): different rendering: 0, different find_undeclared_variables: 20
 
 # Check that every variable whose context value can change the output is
 # still reported (no false negatives).

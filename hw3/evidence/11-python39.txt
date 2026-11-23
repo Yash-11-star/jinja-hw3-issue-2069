@@ -1,0 +1,9 @@
+### Python 3.9.6: full suite, patched
+940 passed in 1.81s
+### Python 3.9: new + related tests on ORIGINAL 3.1.6 source
+13 failed, 27 passed in 0.14s
+### Python 3.9: differential, sync and async
+templates with different rendering: 0
+templates with different find_undeclared_variables: 20
+templates with different rendering: 0
+templates with different find_undeclared_variables: 20
