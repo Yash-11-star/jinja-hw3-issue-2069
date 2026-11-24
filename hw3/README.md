@@ -32,7 +32,7 @@ The history starts at the unmodified release commit, so every change is visible:
 | `Reword task description in AGENT_LOG` | Documentation only |
 | `Scan nested scopes in a single pass` | Performance refinement of the fix (behavior unchanged) |
 | `Update HW3 docs and evidence after review` | Documentation, scripts and evidence for the refinement |
-| `Clarify that the oracle is a test over the corpus, not a proof` | Wording in `scripts/oracle.py` |
+| Later documentation-only commits | Wording fixes in `hw3/` (no source or test changes) |
 
 See the whole patch with `git diff 3.1.6 -- src/` (one file, `src/jinja2/idtracking.py`).
 
