@@ -1,9 +1,10 @@
-"""Soundness oracle for find_undeclared_variables on the patched checkout.
+"""Dependency oracle for find_undeclared_variables on the patched checkout.
 
 A name is *observably* read from the context if changing its value in the
 render context changes the output for some combination of the conditions.
 Every such name must be reported by find_undeclared_variables (otherwise the
-fix hides a real dependency). Names that are reported but never observable
+fix hides a real dependency on the tested inputs; this is a test over the
+corpus, not a proof). Names that are reported but never observable
 are counted as remaining over-reports.
 
 Uses the same templates as differential.py (templates.py).
